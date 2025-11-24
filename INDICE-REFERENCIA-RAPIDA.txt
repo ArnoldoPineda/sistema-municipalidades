@@ -1,0 +1,104 @@
+═══════════════════════════════════════════════════════════════
+  SISTEMA MUNICIPAL - REFERENCIA RÁPIDA
+═══════════════════════════════════════════════════════════════
+
+🎨 COLORES BASE
+───────────────────────────────────────────────────────────────
+#0066CC  → Azul Principal (Botones primarios, links activos)
+#0052A3  → Azul Hover (Estados hover)
+#E6F2FF  → Azul Fondo (Fondos suaves, highlights)
+#10B981  → Verde (Éxito, aprobaciones)
+#F59E0B  → Naranja (Advertencias, pendientes)
+#EF4444  → Rojo (Errores, rechazos)
+#6B7280  → Gris (Texto secundario)
+#E5E7EB  → Gris Bordes (Bordes, separadores)
+#F9FAFB  → Gris Fondo (Fondos de secciones)
+#FFFFFF  → Blanco (Fondos principales)
+
+📏 ESPACIADOS
+───────────────────────────────────────────────────────────────
+XS:  4px
+SM:  8px
+MD:  16px
+LG:  24px
+XL:  32px
+2XL: 48px
+3XL: 64px
+
+📐 BREAKPOINTS
+───────────────────────────────────────────────────────────────
+Desktop: 1280px
+Tablet:  768px
+Mobile:  375px
+
+🔤 TIPOGRAFÍA
+───────────────────────────────────────────────────────────────
+H1:      32px / 40px (Bold)
+H2:      24px / 32px (SemiBold)
+H3:      20px / 28px (SemiBold)
+H4:      18px / 24px (Medium)
+Body:    16px / 24px (Regular)
+Small:   14px / 20px (Regular)
+Caption: 12px / 16px (Regular)
+
+🧩 COMPONENTES BASE
+───────────────────────────────────────────────────────────────
+BOTONES:
+  • Primary (Azul #0066CC)
+  • Secondary (Gris #6B7280)
+  • Danger (Rojo #EF4444)
+  • Success (Verde #10B981)
+  • Disabled (Gris claro)
+
+INPUTS:
+  • Text
+  • Select
+  • Textarea
+  • Estados: Default, Focus, Error, Disabled
+
+CARDS:
+  • Default
+  • KPI (Azul, Verde, Naranja, Rojo)
+  • Hover
+
+BADGES:
+  • Success (Verde)
+  • Warning (Naranja)
+  • Danger (Rojo)
+  • Info (Azul)
+
+TABLES:
+  • Header
+  • Rows
+  • Hover
+  • Stripe
+
+MODAL:
+  • Header
+  • Content
+  • Footer
+
+📄 PÁGINAS (9 total)
+───────────────────────────────────────────────────────────────
+1. Login ✅
+2. Dashboard
+3. Permisos Operación (Listar)
+4. Permiso Op. (Crear/Editar - Modal)
+5. Permisos Construcción
+6. Solvencias
+7. Reportes
+8. Usuarios (Admin)
+9. Configuración (Admin)
+
+👥 ROLES
+───────────────────────────────────────────────────────────────
+Admin     → Acceso completo
+Empleado  → CRUD permisos/solvencias
+Directivo → Solo lectura
+
+🔗 FIGMA
+───────────────────────────────────────────────────────────────
+https://figma.com/design/pFACdirtNEFvozkjP80YxM/01-Login-Deskt?node-id=0-1
+
+
+
