@@ -11,13 +11,17 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-small text-gray-700 mb-xs">
+          <label className="block text-small text-gray-700 mb-sm">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
-          className={cn('input-base min-h-[100px] resize-y', error && 'input-error', className)}
+          className={cn(
+            'w-full px-md py-sm border border-neutral-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors min-h-[100px] resize-y',
+            error && 'border-danger focus:ring-danger',
+            className
+          )}
           {...props}
         />
         {error && (

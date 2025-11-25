@@ -9,7 +9,8 @@ import {
   Settings,
   FolderTree,
   MapPin,
-  BookOpen
+  BookOpen,
+  AlertCircle
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
@@ -24,6 +25,7 @@ const menuItems = [
   { path: '/libro-control-permisos-operacion', label: 'Libro de Permisos de Operación', icon: BookOpen },
   { path: '/libro-control-permisos-construccion', label: 'Libro de Permisos de Construcción', icon: BookOpen },
   { path: '/libro-control-solvencias', label: 'Libro de Solvencias', icon: BookOpen },
+  { path: '/contribuyentes-morosos', label: 'Contribuyentes Morosos', icon: AlertCircle },
   { path: '/reportes', label: 'Reportes', icon: BarChart3 },
   { path: '/usuarios', label: 'Usuarios', icon: Users, adminOnly: true },
   { path: '/configuracion', label: 'Configuración', icon: Settings, adminOnly: true },

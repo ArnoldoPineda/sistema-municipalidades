@@ -1,84 +1,78 @@
-import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import Button from '@/components/ui/Button'
 import Select from '@/components/ui/Select'
 import Input from '@/components/ui/Input'
 import Card from '@/components/ui/Card'
-import { Download, FileSpreadsheet, FileText, Building2, Shield, BookOpen, ArrowRight } from 'lucide-react'
-
+import { Download, BarChart3, BookOpen } from 'lucide-react'
 export default function Reportes() {
   const [tipoReporte, setTipoReporte] = useState('')
-  const [fechaDesde, setFechaDesde] = useState('')
-  const [fechaHasta, setFechaHasta] = useState('')
+  const [fechaInicio, setFechaInicio] = useState('')
+  const [fechaFin, setFechaFin] = useState('')
 
-  const handleGenerar = () => {
-    // TODO: Implementar generación de reportes
-    console.log('Generar reporte:', { tipoReporte, fechaDesde, fechaHasta })
+  const tiposReporte = [
+    { value: '', label: 'Seleccione un tipo de reporte' },
+    { value: 'permisos-operacion', label: 'Permisos de Operación' },
+    { value: 'permisos-construccion', label: 'Permisos de Construcción' },
+    { value: 'solvencias', label: 'Solvencias Municipales' },
+    { value: 'general', label: 'Reporte General' },
+  ]
+
+  const handleGenerarReporte = () => {
+    if (!tipoReporte) {
+      alert('Por favor selecciona un tipo de reporte')
+      return
+    }
+    // Aquí iría la lógica para generar el reporte
+    console.log('Generando reporte:', { tipoReporte, fechaInicio, fechaFin })
   }
 
   return (
     <div className="space-y-xl">
       <div>
         <h1 className="text-h1 font-bold mb-xs">Reportes</h1>
-        <p className="text-base text-neutral-text">Genera reportes del sistema</p>
+        <p className="text-base text-neutral-text">Genera y descarga reportes del sistema</p>
       </div>
 
-      {/* Libros de Control Disponibles */}
+      {/* Libros de Control */}
       <div>
-        <h3 className="text-h3 font-semibold mb-md">Libros de Control</h3>
+        <h2 className="text-h2 font-semibold mb-md">Libros de Control</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
           <Link to="/libro-control-permisos-operacion">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-              <div className="flex items-start gap-md">
-                <div className="p-md bg-blue-100 rounded-lg">
-                  <FileText className="w-6 h-6 text-blue-600" />
+            <Card className="p-md hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center gap-md">
+                <div className="p-md bg-blue-100 rounded-sm">
+                  <BookOpen className="w-6 h-6 text-blue-600" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold mb-xs">Libro de Permisos de Operación</h4>
-                  <p className="text-sm text-neutral-text mb-md">
-                    Visualiza y genera reportes de permisos de operación con filtros avanzados
-                  </p>
-                  <div className="flex items-center text-primary text-sm font-medium">
-                    Abrir libro <ArrowRight className="w-4 h-4 ml-xs" />
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-neutral-text">Libro de Permisos de Operación</h3>
+                  <p className="text-sm text-neutral-text/70">Ver y exportar</p>
                 </div>
               </div>
             </Card>
           </Link>
-
           <Link to="/libro-control-permisos-construccion">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-              <div className="flex items-start gap-md">
-                <div className="p-md bg-green-100 rounded-lg">
-                  <Building2 className="w-6 h-6 text-green-600" />
+            <Card className="p-md hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center gap-md">
+                <div className="p-md bg-green-100 rounded-sm">
+                  <BookOpen className="w-6 h-6 text-green-600" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold mb-xs">Libro de Permisos de Construcción</h4>
-                  <p className="text-sm text-neutral-text mb-md">
-                    Visualiza y genera reportes de permisos de construcción con filtros avanzados
-                  </p>
-                  <div className="flex items-center text-primary text-sm font-medium">
-                    Abrir libro <ArrowRight className="w-4 h-4 ml-xs" />
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-neutral-text">Libro de Permisos de Construcción</h3>
+                  <p className="text-sm text-neutral-text/70">Ver y exportar</p>
                 </div>
               </div>
             </Card>
           </Link>
-
           <Link to="/libro-control-solvencias">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-              <div className="flex items-start gap-md">
-                <div className="p-md bg-orange-100 rounded-lg">
-                  <Shield className="w-6 h-6 text-orange-600" />
+            <Card className="p-md hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center gap-md">
+                <div className="p-md bg-orange-100 rounded-sm">
+                  <BookOpen className="w-6 h-6 text-orange-600" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold mb-xs">Libro de Solvencias</h4>
-                  <p className="text-sm text-neutral-text mb-md">
-                    Visualiza y genera reportes de solvencias municipales con filtros avanzados
-                  </p>
-                  <div className="flex items-center text-primary text-sm font-medium">
-                    Abrir libro <ArrowRight className="w-4 h-4 ml-xs" />
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-neutral-text">Libro de Solvencias</h3>
+                  <p className="text-sm text-neutral-text/70">Ver y exportar</p>
                 </div>
               </div>
             </Card>
@@ -88,65 +82,46 @@ export default function Reportes() {
 
       {/* Generador de Reportes Personalizados */}
       <Card>
-        <h3 className="text-h3 font-semibold mb-md">Generar Reporte Personalizado</h3>
-        <div className="space-y-md">
-          <Select
-            label="Tipo de Reporte"
-            options={[
-              { value: '', label: 'Seleccionar tipo de reporte' },
-              { value: 'permisos-operacion', label: 'Permisos de Operación por período' },
-              { value: 'permisos-construccion', label: 'Permisos de Construcción por período' },
-              { value: 'solvencias', label: 'Solvencias emitidas' },
-              { value: 'estadisticas', label: 'Estadísticas generales' },
-              { value: 'tipo-permiso', label: 'Por tipo de permiso' },
-              { value: 'actividad-economica', label: 'Por actividad económica' },
-            ]}
-            value={tipoReporte}
-            onChange={(e) => setTipoReporte(e.target.value)}
-          />
-
-          <div className="grid grid-cols-2 gap-md">
-            <Input
-              label="Desde"
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
+        <div className="p-md">
+          <h2 className="text-h2 font-semibold mb-md">Generar Reporte Personalizado</h2>
+          <div className="space-y-md">
+            <Select
+              label="Tipo de Reporte *"
+              options={tiposReporte}
+              value={tipoReporte}
+              onChange={(e) => setTipoReporte(e.target.value)}
             />
-            <Input
-              label="Hasta"
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+              <Input
+                label="Fecha Inicio"
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+              />
+              <Input
+                label="Fecha Fin"
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-xs">
+              <Button onClick={handleGenerarReporte} className="flex items-center gap-xs">
+                <BarChart3 className="w-5 h-5" />
+                Generar Reporte
+              </Button>
+              <Button variant="secondary" className="flex items-center gap-xs">
+                <Download className="w-5 h-5" />
+                Descargar PDF
+              </Button>
+              <Button variant="secondary" className="flex items-center gap-xs">
+                <Download className="w-5 h-5" />
+                Descargar Excel
+              </Button>
+            </div>
           </div>
-
-          <Button onClick={handleGenerar} className="w-full md:w-auto">
-            Generar Reporte
-          </Button>
         </div>
       </Card>
-
-      {/* Vista Previa del Reporte */}
-      {tipoReporte && (
-        <Card>
-          <h3 className="text-h3 font-semibold mb-md">Vista Previa del Reporte</h3>
-          <div className="h-64 bg-neutral-background rounded-sm flex items-center justify-center mb-md">
-            <p className="text-base text-neutral-text">
-              {tipoReporte ? `Vista previa del reporte: ${tipoReporte}` : 'Selecciona un tipo de reporte para ver la vista previa'}
-            </p>
-          </div>
-          <div className="flex gap-md">
-            <Button variant="secondary" className="flex items-center gap-xs">
-              <Download className="w-4 h-4" />
-              Descargar PDF
-            </Button>
-            <Button variant="secondary" className="flex items-center gap-xs">
-              <FileSpreadsheet className="w-4 h-4" />
-              Exportar Excel
-            </Button>
-          </div>
-        </Card>
-      )}
     </div>
   )
 }

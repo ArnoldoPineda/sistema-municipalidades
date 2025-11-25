@@ -13,14 +13,18 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full relative">
         {label && (
-          <label className="block text-small text-gray-700 mb-xs">
+          <label className="block text-small text-gray-700 mb-sm">
             {label}
           </label>
         )}
         <div className="relative">
           <select
             ref={ref}
-            className={cn('input-base appearance-none pr-xl', error && 'input-error', className)}
+            className={cn(
+              'w-full px-md py-sm border border-neutral-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors appearance-none pr-xl',
+              error && 'border-danger focus:ring-danger',
+              className
+            )}
             {...props}
           >
             {options.map((option) => (

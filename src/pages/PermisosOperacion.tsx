@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { MouseEvent } from 'react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -6,7 +7,9 @@ import Table, { TableRow, TableCell } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Card from '@/components/ui/Card'
 import Tag from '@/components/ui/Tag'
+import Modal from '@/components/ui/Modal'
 import PermisoOperacionPrint from '@/components/PermisoOperacionPrint'
+import SancionesDisposicionesPrint from '@/components/SancionesDisposicionesPrint'
 import { Plus, Save, X, List, Printer, Edit, Trash2 } from 'lucide-react'
 
 interface PermisoOperacion {
@@ -186,7 +189,9 @@ export default function PermisosOperacion() {
     return Object.keys(nuevosErrores).length === 0
   }
 
-  const handleNuevo = () => {
+  const handleNuevo = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     setIsEditing(false)
     setSelectedPermiso(null)
     limpiarFormulario()
@@ -194,7 +199,9 @@ export default function PermisosOperacion() {
     setErrores({})
   }
 
-  const handleGuardar = () => {
+  const handleGuardar = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     if (!validarFormulario()) {
       return
     }
@@ -231,7 +238,9 @@ export default function PermisosOperacion() {
     setErrores({})
   }
 
-  const handleCancelar = () => {
+  const handleCancelar = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     limpiarFormulario()
     setIsEditing(false)
     setSelectedPermiso(null)
@@ -276,6 +285,8 @@ export default function PermisosOperacion() {
   }
 
   const [permisoAImprimir, setPermisoAImprimir] = useState<PermisoOperacion | null>(null)
+  const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false)
+  const [tipoDocumento, setTipoDocumento] = useState<'permiso' | 'sanciones' | null>(null)
 
   const handleImprimir = (permiso?: PermisoOperacion) => {
     let permisoParaImprimir: PermisoOperacion | null = null
@@ -304,39 +315,54 @@ export default function PermisosOperacion() {
     }
 
     if (permisoParaImprimir) {
-      console.log('Preparando impresión de permiso:', permisoParaImprimir)
       setPermisoAImprimir(permisoParaImprimir)
-      
-      // Esperar a que el componente se renderice completamente
-      setTimeout(() => {
-        try {
-          console.log('Abriendo diálogo de impresión...')
-          window.print()
-          
-          // Limpiar después de imprimir (cuando se cierre el diálogo)
-          const handleAfterPrint = () => {
-            console.log('Impresión completada, limpiando...')
-            setTimeout(() => {
-              setPermisoAImprimir(null)
-            }, 100)
-          }
-          
-          // Intentar usar afterprint, si no está disponible, limpiar después de un tiempo
-          if (window.matchMedia) {
-            window.addEventListener('afterprint', handleAfterPrint, { once: true })
-          } else {
-            // Fallback para navegadores que no soportan afterprint
-            setTimeout(handleAfterPrint, 1000)
-          }
-        } catch (error) {
-          console.error('Error al imprimir:', error)
-          alert('Error al abrir el diálogo de impresión. Por favor, intenta de nuevo.')
-          setPermisoAImprimir(null)
-        }
-      }, 800)
+      setMostrarModalImpresion(true)
+      setTipoDocumento(null)
     } else {
       alert('No hay permiso seleccionado para imprimir. Completa al menos el nombre del negocio y propietario.')
     }
+  }
+
+  const handleSeleccionarTipoDocumento = (tipo: 'permiso' | 'sanciones') => {
+    setTipoDocumento(tipo)
+  }
+
+  const handleImprimirDocumento = () => {
+    if (!tipoDocumento) {
+      alert('Por favor selecciona un tipo de documento para imprimir')
+      return
+    }
+
+    // Esperar a que el componente se renderice completamente
+    setTimeout(() => {
+      try {
+        window.print()
+        
+        // Limpiar después de imprimir
+        const handleAfterPrint = () => {
+          setTimeout(() => {
+            setPermisoAImprimir(null)
+            setMostrarModalImpresion(false)
+            setTipoDocumento(null)
+          }, 100)
+        }
+        
+        if (typeof window !== 'undefined') {
+          window.addEventListener('afterprint', handleAfterPrint, { once: true })
+        } else {
+          setTimeout(handleAfterPrint, 1000)
+        }
+      } catch (error) {
+        console.error('Error al imprimir:', error)
+        alert('Error al abrir el diálogo de impresión. Por favor, intenta de nuevo.')
+      }
+    }, 300)
+  }
+
+  const handleCerrarModal = () => {
+    setMostrarModalImpresion(false)
+    setTipoDocumento(null)
+    setPermisoAImprimir(null)
   }
 
   const handleAgregarActividad = () => {
@@ -540,8 +566,8 @@ export default function PermisosOperacion() {
       </div>
 
       <Card>
-        <div className="space-y-md">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+        <div className="space-y-lg p-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
             <div>
               <Input
                 label="Nombre del negocio *"
@@ -633,7 +659,7 @@ export default function PermisosOperacion() {
               )}
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 mt-md">
               <Input
                 label="Dirección actual *"
                 placeholder="Ej: FRENTE AL BANCO DE OCCIDENTE"
@@ -686,7 +712,7 @@ export default function PermisosOperacion() {
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 mt-md">
               <label className="block text-sm text-gray-700 mb-xs">
                 Actividades económicas *
               </label>
@@ -764,31 +790,35 @@ export default function PermisosOperacion() {
           </div>
 
           {/* Botones de acción */}
-          <div className="flex flex-wrap gap-md pt-md border-t border-neutral-border">
+          <div className="flex flex-wrap gap-lg pt-xl mt-xl border-t border-neutral-border">
             <Button
+              type="button"
               variant="secondary"
-              onClick={handleNuevo}
+              onClick={(e) => handleNuevo(e)}
               className="flex items-center gap-xs"
             >
               <Plus className="w-4 h-4" />
               Nuevo
             </Button>
             <Button
-              onClick={handleGuardar}
+              type="button"
+              onClick={(e) => handleGuardar(e)}
               className="flex items-center gap-xs"
             >
               <Save className="w-4 h-4" />
               Guardar
             </Button>
             <Button
+              type="button"
               variant="secondary"
-              onClick={handleCancelar}
+              onClick={(e) => handleCancelar(e)}
               className="flex items-center gap-xs"
             >
               <X className="w-4 h-4" />
               Cancelar
             </Button>
             <Button
+              type="button"
               variant="secondary"
               onClick={() => setVistaLista(true)}
               className="flex items-center gap-xs"
@@ -797,6 +827,7 @@ export default function PermisosOperacion() {
               Ver lista
             </Button>
             <Button
+              type="button"
               variant="secondary"
               onClick={() => handleImprimir()}
               className="flex items-center gap-xs"
@@ -809,9 +840,116 @@ export default function PermisosOperacion() {
         </div>
       </Card>
 
-      {/* Componente de impresión */}
-      {permisoAImprimir && (
-        <PermisoOperacionPrint permiso={permisoAImprimir} />
+      {/* Modal de impresión */}
+      <Modal
+        isOpen={mostrarModalImpresion}
+        onClose={handleCerrarModal}
+        title="Imprimir Documento"
+        size="xl"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={handleCerrarModal}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleImprimirDocumento}
+              disabled={!tipoDocumento}
+              className="flex items-center gap-xs"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-md">
+          <div>
+            <p className="text-base text-neutral-text mb-md">
+              Selecciona el tipo de documento que deseas imprimir:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-md mb-md">
+              <button
+                onClick={() => handleSeleccionarTipoDocumento('permiso')}
+                className={`p-md border-2 rounded-sm transition-colors text-left ${
+                  tipoDocumento === 'permiso'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-neutral-border hover:border-primary/50'
+                }`}
+              >
+                <div className="font-semibold text-base mb-xs">Permiso de Operación</div>
+                <div className="text-sm text-neutral-text">
+                  Documento completo con información del negocio, propietario y datos del permiso
+                </div>
+              </button>
+              <button
+                onClick={() => handleSeleccionarTipoDocumento('sanciones')}
+                className={`p-md border-2 rounded-sm transition-colors text-left ${
+                  tipoDocumento === 'sanciones'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-neutral-border hover:border-primary/50'
+                }`}
+              >
+                <div className="font-semibold text-base mb-xs">Sanciones y Disposiciones</div>
+                <div className="text-sm text-neutral-text">
+                  Documento con sanciones, disposiciones e información del recibo
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Vista previa del documento seleccionado */}
+          {tipoDocumento && permisoAImprimir && (
+            <div className="border border-neutral-border rounded-sm p-md bg-neutral-background max-h-[600px] overflow-y-auto">
+              <div className="text-sm font-semibold mb-md text-neutral-text">
+                Vista previa:
+              </div>
+              {tipoDocumento === 'permiso' ? (
+                <PermisoOperacionPrint permiso={permisoAImprimir} soloPermiso={true} />
+              ) : (
+                <SancionesDisposicionesPrint 
+                  permiso={{
+                    numeroRecibo: permisoAImprimir.numeroRecibo,
+                    valorRecibo: permisoAImprimir.valorRecibo
+                  }} 
+                />
+              )}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Componente de impresión (oculto en pantalla, visible al imprimir) */}
+      {permisoAImprimir && tipoDocumento && (
+        <div className="print-only" style={{ 
+          position: 'fixed', 
+          left: '-9999px', 
+          top: '-9999px',
+          visibility: 'hidden'
+        }}>
+          <style>{`
+            @media print {
+              .print-only {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                visibility: visible !important;
+              }
+            }
+          `}</style>
+          {tipoDocumento === 'permiso' ? (
+            <PermisoOperacionPrint permiso={permisoAImprimir} soloPermiso={true} />
+          ) : (
+            <SancionesDisposicionesPrint 
+              permiso={{
+                numeroRecibo: permisoAImprimir.numeroRecibo,
+                valorRecibo: permisoAImprimir.valorRecibo
+              }} 
+            />
+          )}
+        </div>
       )}
     </div>
   )

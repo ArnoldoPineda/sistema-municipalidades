@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { MouseEvent } from 'react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -6,7 +7,9 @@ import Table, { TableRow, TableCell } from '@/components/ui/Table'
 import Badge from '@/components/ui/Badge'
 import Card from '@/components/ui/Card'
 import Tag from '@/components/ui/Tag'
-import SolvenciaPersonalPrint from '@/components/SolvenciaPersonalPrint'
+import Modal from '@/components/ui/Modal'
+import ConstanciaPagoSolvenciaPrint from '@/components/ConstanciaPagoSolvenciaPrint'
+import SolvenciaQRPrint from '@/components/SolvenciaQRPrint'
 import { Plus, Save, X, List, Printer, Edit, Trash2 } from 'lucide-react'
 
 interface SolvenciaPersonal {
@@ -26,7 +29,9 @@ export default function Solvencias() {
   const [vistaLista, setVistaLista] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [selectedSolvencia, setSelectedSolvencia] = useState<SolvenciaPersonal | null>(null)
-  const [permisoAImprimir, setPermisoAImprimir] = useState<SolvenciaPersonal | null>(null)
+  const [solvenciaAImprimir, setSolvenciaAImprimir] = useState<SolvenciaPersonal | null>(null)
+  const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false)
+  const [tipoDocumento, setTipoDocumento] = useState<'constancia' | 'qr' | null>(null)
 
   // Datos del formulario
   const [numeroSolvencia, setNumeroSolvencia] = useState('')
@@ -114,7 +119,9 @@ export default function Solvencias() {
     return Object.keys(nuevosErrores).length === 0
   }
 
-  const handleNuevo = () => {
+  const handleNuevo = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     setIsEditing(false)
     setSelectedSolvencia(null)
     const nuevoNumero = generarNumeroSolvencia()
@@ -129,7 +136,9 @@ export default function Solvencias() {
     setErrores({})
   }
 
-  const handleGuardar = () => {
+  const handleGuardar = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     if (!validarFormulario()) {
       return
     }
@@ -161,7 +170,9 @@ export default function Solvencias() {
     setErrores({})
   }
 
-  const handleCancelar = () => {
+  const handleCancelar = (e?: MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     limpiarFormulario()
     setIsEditing(false)
     setSelectedSolvencia(null)
@@ -202,23 +213,42 @@ export default function Solvencias() {
     const solvenciaParaImprimir = solvencia || (isEditing && selectedSolvencia ? selectedSolvencia : null)
     
     if (solvenciaParaImprimir) {
-      setPermisoAImprimir(solvenciaParaImprimir)
-      setTimeout(() => {
-        try {
-          window.print()
-          window.addEventListener('afterprint', () => {
-            setTimeout(() => {
-              setPermisoAImprimir(null)
-            }, 100)
-          }, { once: true })
-        } catch (error) {
-          console.error('Error al imprimir:', error)
-          setPermisoAImprimir(null)
-        }
-      }, 500)
+      setSolvenciaAImprimir(solvenciaParaImprimir)
+      setMostrarModalImpresion(true)
+      setTipoDocumento(null)
     } else {
       alert('No hay solvencia seleccionada para imprimir. Completa el formulario y guarda primero.')
     }
+  }
+
+  const handleCerrarModal = () => {
+    setMostrarModalImpresion(false)
+    setTipoDocumento(null)
+    setSolvenciaAImprimir(null)
+  }
+
+  const handleImprimirDocumento = () => {
+    if (!tipoDocumento) {
+      alert('Por favor selecciona un tipo de documento para imprimir')
+      return
+    }
+
+    setMostrarModalImpresion(false)
+    setTimeout(() => {
+      try {
+        window.print()
+        window.addEventListener('afterprint', () => {
+          setTimeout(() => {
+            setSolvenciaAImprimir(null)
+            setTipoDocumento(null)
+          }, 100)
+        }, { once: true })
+      } catch (error) {
+        console.error('Error al imprimir:', error)
+        setSolvenciaAImprimir(null)
+        setTipoDocumento(null)
+      }
+    }, 100)
   }
 
   const formatIdentidad = (value: string) => {
@@ -312,14 +342,14 @@ export default function Solvencias() {
       </div>
 
       <Card>
-        <div className="space-y-md">
+        <div className="space-y-lg p-lg">
           {/* Título de sección */}
-          <div className="text-center mb-lg">
-            <h2 className="text-h3 font-semibold mb-md">Contribuyente</h2>
+          <div className="text-center mb-xl">
+            <h2 className="text-h3 font-semibold mb-lg">Contribuyente</h2>
           </div>
 
           {/* Campos del formulario */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
             <Input
               label="N° de solvencia"
               placeholder="0000034"
@@ -451,31 +481,35 @@ export default function Solvencias() {
           </div>
 
           {/* Botones de acción */}
-          <div className="flex flex-wrap gap-md pt-md border-t border-neutral-border">
+          <div className="flex flex-wrap gap-lg pt-xl mt-xl border-t border-neutral-border">
             <Button
+              type="button"
               variant="secondary"
-              onClick={handleNuevo}
+              onClick={(e) => handleNuevo(e)}
               className="flex items-center gap-xs"
             >
               <Plus className="w-4 h-4" />
               Nuevo
             </Button>
             <Button
-              onClick={handleGuardar}
+              type="button"
+              onClick={(e) => handleGuardar(e)}
               className="flex items-center gap-xs"
             >
               <Save className="w-4 h-4" />
               Guardar
             </Button>
             <Button
+              type="button"
               variant="secondary"
-              onClick={handleCancelar}
+              onClick={(e) => handleCancelar(e)}
               className="flex items-center gap-xs"
             >
               <X className="w-4 h-4" />
               Cancelar
             </Button>
             <Button
+              type="button"
               variant="secondary"
               onClick={() => setVistaLista(true)}
               className="flex items-center gap-xs"
@@ -484,6 +518,7 @@ export default function Solvencias() {
               Ver lista
             </Button>
             <Button
+              type="button"
               variant="secondary"
               onClick={() => handleImprimir()}
               className="flex items-center gap-xs"
@@ -496,9 +531,104 @@ export default function Solvencias() {
         </div>
       </Card>
 
-      {/* Componente de impresión */}
-      {permisoAImprimir && (
-        <SolvenciaPersonalPrint solvencia={permisoAImprimir} />
+      {/* Modal de selección de impresión */}
+      <Modal
+        isOpen={mostrarModalImpresion}
+        onClose={handleCerrarModal}
+        title="Seleccionar tipo de documento para imprimir"
+      >
+        <div className="space-y-lg">
+          {/* Opciones de selección */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+            <button
+              type="button"
+              onClick={() => setTipoDocumento('constancia')}
+              className={`p-lg border-2 rounded-sm text-left transition-colors ${
+                tipoDocumento === 'constancia'
+                  ? 'border-primary bg-primary-background'
+                  : 'border-neutral-border hover:border-primary hover:bg-gray-50'
+              }`}
+            >
+              <div className="font-semibold mb-xs">Constancia de Pago</div>
+              <div className="text-sm text-neutral-text">
+                Documento oficial de constancia de pago de impuestos personales municipales
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTipoDocumento('qr')}
+              className={`p-lg border-2 rounded-sm text-left transition-colors ${
+                tipoDocumento === 'qr'
+                  ? 'border-primary bg-primary-background'
+                  : 'border-neutral-border hover:border-primary hover:bg-gray-50'
+              }`}
+            >
+              <div className="font-semibold mb-xs">Solvencia con QR</div>
+              <div className="text-sm text-neutral-text">
+                Documento con código QR y firma del alcalde municipal
+              </div>
+            </button>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="flex justify-end gap-md pt-md border-t border-neutral-border">
+            <Button
+              variant="secondary"
+              onClick={handleCerrarModal}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleImprimirDocumento}
+              disabled={!tipoDocumento}
+              className="flex items-center gap-xs"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir
+            </Button>
+          </div>
+
+          {/* Vista previa del documento seleccionado */}
+          {tipoDocumento && solvenciaAImprimir && (
+            <div className="border border-neutral-border rounded-sm p-md bg-neutral-background max-h-[600px] overflow-y-auto">
+              <div className="text-sm font-semibold mb-md text-neutral-text">
+                Vista previa:
+              </div>
+              {tipoDocumento === 'constancia' ? (
+                <ConstanciaPagoSolvenciaPrint solvencia={solvenciaAImprimir} />
+              ) : (
+                <SolvenciaQRPrint solvencia={solvenciaAImprimir} />
+              )}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Componente de impresión (oculto en pantalla, visible al imprimir) */}
+      {solvenciaAImprimir && tipoDocumento && (
+        <div className="print-only" style={{ 
+          position: 'fixed', 
+          left: '-9999px', 
+          top: '-9999px',
+          visibility: 'hidden'
+        }}>
+          <style>{`
+            @media print {
+              .print-only {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                visibility: visible !important;
+              }
+            }
+          `}</style>
+          {tipoDocumento === 'constancia' ? (
+            <ConstanciaPagoSolvenciaPrint solvencia={solvenciaAImprimir} />
+          ) : (
+            <SolvenciaQRPrint solvencia={solvenciaAImprimir} />
+          )}
+        </div>
       )}
     </div>
   )

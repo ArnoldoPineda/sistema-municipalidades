@@ -1,21 +1,15 @@
-import { HTMLAttributes, ReactNode } from 'react'
+import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
+interface CardProps {
   children: ReactNode
-  hover?: boolean
+  className?: string
 }
 
-export default function Card({ children, hover = false, className, ...props }: CardProps) {
+export default function Card({ children, className }: CardProps) {
   return (
-    <div
-      className={cn(hover ? 'card-hover' : 'card', className)}
-      {...props}
-    >
+    <div className={cn('card bg-white border border-neutral-border rounded-sm p-md', className)}>
       {children}
     </div>
   )
 }
-
-
-

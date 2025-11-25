@@ -2,24 +2,22 @@ import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 interface BadgeProps {
-  variant?: 'success' | 'warning' | 'danger' | 'info'
   children: ReactNode
+  variant?: 'success' | 'danger' | 'warning' | 'info'
+  className?: string
 }
 
-export default function Badge({ variant = 'info', children }: BadgeProps) {
+export default function Badge({ children, variant = 'info', className }: BadgeProps) {
   const variants = {
-    success: 'badge-success',
-    warning: 'badge-warning',
-    danger: 'badge-danger',
-    info: 'badge-info',
+    success: 'bg-green-100 text-green-800',
+    danger: 'bg-red-100 text-red-800',
+    warning: 'bg-yellow-100 text-yellow-800',
+    info: 'bg-blue-100 text-blue-800'
   }
 
   return (
-    <span className={cn('badge', variants[variant])}>
+    <span className={cn('px-xs py-xs rounded-sm text-xs font-medium', variants[variant], className)}>
       {children}
     </span>
   )
 }
-
-
-

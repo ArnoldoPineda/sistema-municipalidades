@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 interface User {
   id: string
@@ -25,12 +25,25 @@ export const useAuthStore = create<AuthState>()(
       
       login: async (email: string, password: string) => {
         try {
-          // Intentar iniciar sesión con Supabase Auth
+          // Verificar primero si Supabase está configurado
+          if (!isSupabaseConfigured() || !supabase) {
+            // Fallback: permitir login sin Supabase (modo desarrollo)
+            const user: User = {
+              id: '1',
+              name: 'Usuario Demo',
+              email,
+              role: 'admin'
+            }
+            set({ user, isAuthenticated: true })
+            return
+          }
+      
+          // Intentar iniciar sesión con Supabase Auth solo si está configurado
           const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
             email,
             password,
           })
-
+      
           if (authError) throw authError
 
           // Obtener el perfil del usuario
@@ -89,12 +102,18 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        await supabase.auth.signOut()
+        if (isSupabaseConfigured() && supabase) {
+          await supabase.auth.signOut()
+        }
         set({ user: null, isAuthenticated: false })
       },
 
       checkSession: async () => {
         try {
+          if (!isSupabaseConfigured() || !supabase) {
+            return
+          }
+
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user) {
             const { data: profile } = await supabase
@@ -126,4 +145,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 )
-

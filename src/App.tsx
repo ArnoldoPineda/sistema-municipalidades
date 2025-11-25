@@ -10,10 +10,12 @@ import BarriosColonias from './pages/BarriosColonias'
 import LibroControlPermisosOperacion from './pages/LibroControlPermisosOperacion'
 import LibroControlPermisosConstruccion from './pages/LibroControlPermisosConstruccion'
 import LibroControlSolvencias from './pages/LibroControlSolvencias'
+import ContribuyentesMorosos from './pages/ContribuyentesMorosos'
 import Reportes from './pages/Reportes'
 import Usuarios from './pages/Usuarios'
 import Configuracion from './pages/Configuracion'
-import Layout from './components/Layout'
+import TestConexion from './pages/TestConexion'
+import Layout from './components/Layout/Layout'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -33,9 +35,11 @@ function App() {
         <Route path="libro-control-permisos-operacion" element={<LibroControlPermisosOperacion />} />
         <Route path="libro-control-permisos-construccion" element={<LibroControlPermisosConstruccion />} />
         <Route path="libro-control-solvencias" element={<LibroControlSolvencias />} />
+        <Route path="contribuyentes-morosos" element={<ContribuyentesMorosos />} />
         <Route path="reportes" element={<Reportes />} />
         <Route path="usuarios" element={<Usuarios />} />
         <Route path="configuracion" element={<Configuracion />} />
+        <Route path="test-conexion" element={<TestConexion />} />
       </Route>
     </Routes>
   )

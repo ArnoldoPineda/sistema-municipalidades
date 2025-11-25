@@ -35,16 +35,18 @@ interface TableRowProps {
   hover?: boolean
   stripe?: boolean
   onClick?: () => void
+  className?: string
 }
 
-export function TableRow({ children, hover = true, stripe = false, onClick }: TableRowProps) {
+export function TableRow({ children, hover = true, stripe = false, onClick, className }: TableRowProps) {
   return (
     <tr
       className={cn(
         'border-b border-neutral-border',
         hover && 'hover:bg-neutral-background cursor-pointer transition-colors',
         stripe && 'bg-gray-50/50',
-        onClick && 'cursor-pointer'
+        onClick && 'cursor-pointer',
+        className
       )}
       onClick={onClick}
     >
@@ -54,13 +56,18 @@ export function TableRow({ children, hover = true, stripe = false, onClick }: Ta
 }
 
 interface TableCellProps {
-  children: ReactNode
+  children?: ReactNode
   align?: 'left' | 'right' | 'center'
+  className?: string
+  colSpan?: number
 }
 
-export function TableCell({ children, align = 'left' }: TableCellProps) {
+export function TableCell({ children, align = 'left', className, colSpan }: TableCellProps) {
   return (
-    <td className={cn('px-md py-md text-base', `text-${align}`)}>
+    <td 
+      className={cn('px-md py-md text-base', `text-${align}`, className)}
+      colSpan={colSpan}
+    >
       {children}
     </td>
   )

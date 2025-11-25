@@ -1,5 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useState } from 'react'
+import { useConfiguracionPrint, getTamañoFirmaStyle } from '@/lib/configuracionHelpers'
 
 interface PermisoOperacionPrintProps {
   permiso: {
@@ -16,10 +17,13 @@ interface PermisoOperacionPrintProps {
     valorRecibo: string
     fechaCreacion: string
   }
+  soloPermiso?: boolean
 }
 
-export default function PermisoOperacionPrint({ permiso }: PermisoOperacionPrintProps) {
+export default function PermisoOperacionPrint({ permiso, soloPermiso = false }: PermisoOperacionPrintProps) {
   const [mounted, setMounted] = useState(false)
+  const { firmas, logos, estilo } = useConfiguracionPrint()
+  const tamañoFirma = getTamañoFirmaStyle(estilo.permisosOperacion.tamañoFirma)
 
   useEffect(() => {
     setMounted(true)
@@ -76,10 +80,10 @@ export default function PermisoOperacionPrint({ permiso }: PermisoOperacionPrint
         }
         @media screen {
           .print-container {
-            position: fixed;
-            left: -9999px;
-            top: -9999px;
-            visibility: hidden;
+            position: relative;
+            visibility: visible;
+            background: white;
+            padding: 20px;
           }
         }
         .permit-border {
@@ -275,11 +279,19 @@ export default function PermisoOperacionPrint({ permiso }: PermisoOperacionPrint
           {/* Header */}
           <div className="header-section">
             <div className="permit-number">N° {numeroPermiso}</div>
-            <div className="crest-placeholder"></div>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', margin: '15px 0' }}>
+              {logos.logoAlcaldia ? (
+                <img src={logos.logoAlcaldia} alt="Logo Alcaldía" className="w-20 h-20 object-contain" />
+              ) : (
+                <div className="crest-placeholder"></div>
+              )}
+              {logos.logoSegundo && (
+                <img src={logos.logoSegundo} alt="Logo Segundo" className="w-20 h-20 object-contain" />
+              )}
+            </div>
             <div className="municipal-title">
               ALCALDÍA MUNICIPAL DE MARCOVIA, CHOLUTECA
             </div>
-            <div className="crest-placeholder"></div>
             
             <div className="permit-type-box">
               PERMISO DE OPERACIÓN
@@ -349,11 +361,29 @@ export default function PermisoOperacionPrint({ permiso }: PermisoOperacionPrint
           {/* Signatures */}
           <div className="signatures-section">
             <div className="signature-box">
-              <div className="signature-line"></div>
+              {firmas.alcalde ? (
+                <img 
+                  src={firmas.alcalde} 
+                  alt="Firma Alcalde" 
+                  style={tamañoFirma}
+                  className="object-contain mx-auto"
+                />
+              ) : (
+                <div className="signature-line"></div>
+              )}
               <div className="signature-label">Alcalde municipal</div>
             </div>
             <div className="signature-box">
-              <div className="signature-line"></div>
+              {firmas.juez ? (
+                <img 
+                  src={firmas.juez} 
+                  alt="Firma Juez" 
+                  style={tamañoFirma}
+                  className="object-contain mx-auto"
+                />
+              ) : (
+                <div className="signature-line"></div>
+              )}
               <div className="signature-label">Juez de justicia municipal</div>
             </div>
           </div>
@@ -365,67 +395,69 @@ export default function PermisoOperacionPrint({ permiso }: PermisoOperacionPrint
         </div>
       </div>
 
-      {/* Segunda Página - Sanciones, Disposiciones y Recibo */}
-      <div className="permit-border" style={{ marginTop: '20px', pageBreakBefore: 'always' }}>
-        <div className="permit-content">
-          {/* Sanciones y Multas */}
-          <div className="sanciones-section">
-            <h3 className="section-title">SANCIONES Y MULTAS</h3>
-            <ul className="section-list">
-              <li>
-                Por no cumplir con sus pagos mensuales según declaración presentada o tasación de oficio.
-              </li>
-              <li>
-                Por incumplimiento de las normas establecidas para el funcionamiento de los negocios, 
-                estipuladas en el Plan de Arbitrios Municipal vigente.
-              </li>
-              <li>
-                Por alterar el orden y la tranquilidad pública, el bienestar general, la moral y las buenas costumbres.
-              </li>
-            </ul>
-          </div>
-
-          {/* Disposiciones */}
-          <div className="disposiciones-section">
-            <h3 className="section-title">DISPOSICIONES</h3>
-            <ul className="section-list">
-              <li>
-                Este permiso debe de estar visible en el negocio.
-              </li>
-              <li>
-                Si usted cierra su negocio debe de notificarlo al departamento de administración 
-                tributaria de la municipalidad.
-              </li>
-              <li>
-                Si traspasa su negocio a otra persona o cambia de domicilio debe de notificarlo a la municipalidad.
-              </li>
-              <li>
-                Este permiso vence el 31 de diciembre del año solicitado, se debe de renovar en el mes de enero.
-              </li>
-            </ul>
-          </div>
-
-          {/* Información del Recibo */}
-          <div className="recibo-section">
-            <div className="recibo-row">
-              <span className="recibo-label">Recibo No.</span>
-              <span className="recibo-value-box">{permiso.numeroRecibo || 'N/A'}</span>
+      {/* Segunda Página - Sanciones, Disposiciones y Recibo (solo si no es soloPermiso) */}
+      {!soloPermiso && (
+        <div className="permit-border" style={{ marginTop: '20px', pageBreakBefore: 'always' }}>
+          <div className="permit-content">
+            {/* Sanciones y Multas */}
+            <div className="sanciones-section">
+              <h3 className="section-title">SANCIONES Y MULTAS</h3>
+              <ul className="section-list">
+                <li>
+                  Por no cumplir con sus pagos mensuales según declaración presentada o tasación de oficio.
+                </li>
+                <li>
+                  Por incumplimiento de las normas establecidas para el funcionamiento de los negocios, 
+                  estipuladas en el Plan de Arbitrios Municipal vigente.
+                </li>
+                <li>
+                  Por alterar el orden y la tranquilidad pública, el bienestar general, la moral y las buenas costumbres.
+                </li>
+              </ul>
             </div>
-            <div className="recibo-row">
-              <span className="recibo-label">por Lps.</span>
-              <span className="recibo-value-box">
-                {permiso.valorRecibo 
-                  ? parseFloat(permiso.valorRecibo).toLocaleString('es-HN', { 
-                      minimumFractionDigits: 2, 
-                      maximumFractionDigits: 2 
-                    })
-                  : '0.00'
-                }
-              </span>
+
+            {/* Disposiciones */}
+            <div className="disposiciones-section">
+              <h3 className="section-title">DISPOSICIONES</h3>
+              <ul className="section-list">
+                <li>
+                  Este permiso debe de estar visible en el negocio.
+                </li>
+                <li>
+                  Si usted cierra su negocio debe de notificarlo al departamento de administración 
+                  tributaria de la municipalidad.
+                </li>
+                <li>
+                  Si traspasa su negocio a otra persona o cambia de domicilio debe de notificarlo a la municipalidad.
+                </li>
+                <li>
+                  Este permiso vence el 31 de diciembre del año solicitado, se debe de renovar en el mes de enero.
+                </li>
+              </ul>
+            </div>
+
+            {/* Información del Recibo */}
+            <div className="recibo-section">
+              <div className="recibo-row">
+                <span className="recibo-label">Recibo No.</span>
+                <span className="recibo-value-box">{permiso.numeroRecibo || 'N/A'}</span>
+              </div>
+              <div className="recibo-row">
+                <span className="recibo-label">por Lps.</span>
+                <span className="recibo-value-box">
+                  {permiso.valorRecibo 
+                    ? parseFloat(permiso.valorRecibo).toLocaleString('es-HN', { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                      })
+                    : '0.00'
+                  }
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

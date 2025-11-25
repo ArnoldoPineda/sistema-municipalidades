@@ -157,7 +157,7 @@ export default function LibroControlSolvencias() {
                   name="tipoSolvencia"
                   value="bienes-inmuebles"
                   checked={tipoSolvencia === 'bienes-inmuebles'}
-                  onChange={(e) => {
+                  onChange={() => {
                     setTipoSolvencia('bienes-inmuebles')
                     setPaginaActual(1)
                   }}
@@ -171,7 +171,7 @@ export default function LibroControlSolvencias() {
                   name="tipoSolvencia"
                   value="impuestos-personales"
                   checked={tipoSolvencia === 'impuestos-personales'}
-                  onChange={(e) => {
+                  onChange={() => {
                     setTipoSolvencia('impuestos-personales')
                     setPaginaActual(1)
                   }}

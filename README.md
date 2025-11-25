@@ -34,6 +34,10 @@ Sistema completo desarrollado con React + TypeScript + Vite + Tailwind CSS.
 # Instalar dependencias
 npm install
 
+# Configurar variables de entorno
+# Copia .env.example a .env y agrega tus credenciales de Supabase
+# Ver SUPABASE_SETUP.md para instrucciones detalladas
+
 # Ejecutar en desarrollo
 npm run dev
 
@@ -43,14 +47,23 @@ npm run build
 
 El proyecto se abrirá en `http://localhost:3000`
 
+### Configuración de Supabase
+
+**⚠️ IMPORTANTE:** Antes de usar la aplicación, debes configurar Supabase:
+
+1. Lee el archivo **`SUPABASE_SETUP.md`** para instrucciones completas
+2. Crea las tablas ejecutando el script `database/schema.sql` en Supabase
+3. Configura las variables de entorno en `.env`
+
+**Ver instrucciones detalladas en:** `SUPABASE_SETUP.md`
+
 ### Acceso
 
 1. Ve a `http://localhost:3000`
-2. Ingresa cualquier email y contraseña (autenticación simulada)
-3. Click en "Iniciar Sesión"
-4. Serás redirigido al Dashboard
-
-**Ver instrucciones detalladas en:** `INSTRUCCIONES-INSTALACION.md`
+2. Si Supabase está configurado, usa tus credenciales reales
+3. Si no está configurado, el sistema funcionará en modo demo (sin persistencia)
+4. Click en "Iniciar Sesión"
+5. Serás redirigido al Dashboard
 
 ---
 
@@ -113,6 +126,12 @@ npm run generate-components
 
 ## 📚 Documentación Detallada
 
+### Configuración de Base de Datos
+
+1. **SUPABASE_SETUP.md** - Guía completa para configurar Supabase
+2. **database/schema.sql** - Script SQL para crear todas las tablas
+3. **database/verificar-conexion.sql** - Script para verificar que las tablas estén creadas
+
 ### Para Diseñadores
 
 1. **GUIA-FIGMA-COMPLETA.md** - Guía paso a paso completa
@@ -123,6 +142,7 @@ npm run generate-components
 
 1. **figma-components-spec.json** - Especificaciones en JSON
 2. **ESPECIFICACIONES-COMPONENTES.md** - Para implementar en código
+3. **SUPABASE_SETUP.md** - Configuración de base de datos
 
 ---
 
@@ -151,10 +171,12 @@ npm run generate-components
 
 ### Funcionalidades
 - [x] Routing y navegación
-- [x] Autenticación (simulada)
+- [x] Autenticación (con Supabase)
 - [x] Layout responsive
-- [ ] Integración con Supabase (pendiente)
-- [ ] CRUD completo (pendiente)
+- [x] Integración con Supabase
+- [x] CRUD completo de permisos y catálogos
+- [x] Sistema de configuración municipal
+- [x] Impresión de documentos (permisos, solvencias, avisos)
 
 ---
 
