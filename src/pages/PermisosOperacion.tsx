@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { MouseEvent } from 'react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -10,6 +10,7 @@ import Tag from '@/components/ui/Tag'
 import Modal from '@/components/ui/Modal'
 import PermisoOperacionPrint from '@/components/PermisoOperacionPrint'
 import SancionesDisposicionesPrint from '@/components/SancionesDisposicionesPrint'
+import { permisosService } from '@/services/permisosService'
 import { Plus, Save, X, List, Printer, Edit, Trash2 } from 'lucide-react'
 
 interface PermisoOperacion {
@@ -176,8 +177,8 @@ export default function PermisosOperacion() {
     }
 
     // Validar formato de RTN si se proporciona
-    if (rtnEmpresa && !/^\d{3}-\d{6}-\d{4}$/.test(rtnEmpresa)) {
-      nuevosErrores.rtnEmpresa = 'El formato del RTN debe ser: ___-______-____'
+    if (rtnEmpresa && !/^\d{4}-\d{4}-\d{5}-\d{1}$/.test(rtnEmpresa)) {
+      nuevosErrores.rtnEmpresa = 'El formato del RTN debe ser: ____-____-_____-_'
     }
 
     // Validar formato de Identidad
@@ -199,43 +200,131 @@ export default function PermisosOperacion() {
     setErrores({})
   }
 
-  const handleGuardar = (e?: MouseEvent<HTMLButtonElement>) => {
+  const handleGuardar = async (e?: MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault()
     e?.stopPropagation()
     if (!validarFormulario()) {
       return
     }
 
-    const nuevoPermiso: PermisoOperacion = {
-      id: isEditing && selectedPermiso ? selectedPermiso.id : Date.now().toString(),
-      nombreNegocio: nombreNegocio.trim(),
-      propietario: propietario.trim(),
-      aldea,
-      barrioColonia,
-      direccion: direccion.trim(),
-      rtnEmpresa: rtnEmpresa.trim(),
-      identidad: identidad.trim(),
-      actividadesEconomicas,
-      numeroRecibo: numeroRecibo.trim(),
-      valorRecibo: valorRecibo.trim(),
-      fechaCreacion: isEditing && selectedPermiso 
-        ? selectedPermiso.fechaCreacion 
-        : new Date().toLocaleDateString('es-ES'),
-      estado: isEditing && selectedPermiso 
-        ? selectedPermiso.estado 
-        : 'Pendiente'
-    }
+    try {
+      // Convertir fecha al formato ISO para Supabase
+      let fechaEmision: string | undefined
+      if (isEditing && selectedPermiso) {
+        // Si estamos editando, convertir la fecha del formato local al ISO
+        if (selectedPermiso.fechaCreacion.includes('/')) {
+          // Formato DD/MM/YYYY a YYYY-MM-DD
+          const [dia, mes, año] = selectedPermiso.fechaCreacion.split('/')
+          fechaEmision = `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`
+        } else {
+          fechaEmision = selectedPermiso.fechaCreacion
+        }
+      } else {
+        fechaEmision = new Date().toISOString().split('T')[0]
+      }
 
-    if (isEditing && selectedPermiso) {
-      setPermisos(permisos.map(p => p.id === selectedPermiso.id ? nuevoPermiso : p))
-    } else {
-      setPermisos([...permisos, nuevoPermiso])
-    }
+      // Validar que los campos requeridos no estén vacíos
+      if (!nombreNegocio || !nombreNegocio.trim()) {
+        alert('El nombre del negocio es requerido')
+        return
+      }
+      if (!propietario || !propietario.trim()) {
+        alert('El propietario es requerido')
+        return
+      }
+      if (!identidad || !identidad.trim()) {
+        alert('La identidad es requerida')
+        return
+      }
 
-    limpiarFormulario()
-    setIsEditing(false)
-    setSelectedPermiso(null)
-    setErrores({})
+      // Preparar datos para Supabase
+      const permisoData: any = {
+        nombre_empresa: nombreNegocio.trim(),
+        nombre_propietario: propietario.trim(),
+        rtn_empresa: rtnEmpresa.trim() || null,
+        numero_identidad: identidad.trim(), // Asegurar que no sea null
+        direccion: direccion.trim() || null,
+        aldea_id: aldea || null, // Por ahora guardamos como string, luego se puede mapear a UUID
+        barrio_colonia_id: barrioColonia || null, // Por ahora guardamos como string, luego se puede mapear a UUID
+        numero_recibo: numeroRecibo.trim() || null,
+        valor_recibo: valorRecibo.trim() ? parseFloat(valorRecibo.trim()) : null,
+        estado: isEditing && selectedPermiso 
+          ? selectedPermiso.estado 
+          : 'Pendiente',
+        observaciones: actividadesEconomicas.length > 0 
+          ? `Actividades: ${actividadesEconomicas.join(', ')}` 
+          : null
+      }
+
+      // Solo agregar fecha_emision si existe la columna (manejar error si no existe)
+      if (fechaEmision) {
+        permisoData.fecha_emision = fechaEmision
+      }
+
+      let permisoGuardado
+
+      if (isEditing && selectedPermiso) {
+        // Actualizar permiso existente
+        permisoGuardado = await permisosService.updatePermisoOperacion(selectedPermiso.id, permisoData)
+        
+        // Actualizar actividades
+        // Primero eliminar actividades existentes y luego agregar las nuevas
+        // Por simplicidad, guardamos las actividades en observaciones por ahora
+        // TODO: Implementar gestión completa de actividades en tabla de relación
+        
+        // Actualizar estado local
+        const permisoActualizado: PermisoOperacion = {
+          id: permisoGuardado.id,
+          nombreNegocio: permisoGuardado.nombre_empresa,
+          propietario: permisoGuardado.nombre_propietario,
+          aldea: permisoGuardado.aldea_id || '',
+          barrioColonia: permisoGuardado.barrio_colonia_id || '',
+          direccion: permisoGuardado.direccion || '',
+          rtnEmpresa: permisoGuardado.rtn_empresa || '',
+          identidad: permisoGuardado.numero_identidad,
+          actividadesEconomicas,
+          numeroRecibo: permisoGuardado.numero_recibo || '',
+          valorRecibo: permisoGuardado.valor_recibo?.toString() || '',
+          fechaCreacion: permisoGuardado.fecha_emision || fechaEmision,
+          estado: permisoGuardado.estado as 'Pendiente' | 'Aprobado' | 'Rechazado'
+        }
+        setPermisos(permisos.map(p => p.id === selectedPermiso.id ? permisoActualizado : p))
+      } else {
+        // Crear nuevo permiso
+        permisoGuardado = await permisosService.createPermisoOperacion(permisoData)
+        
+        // Agregar actividades (por ahora en observaciones)
+        // TODO: Implementar gestión completa de actividades
+        
+        // Actualizar estado local
+        const nuevoPermiso: PermisoOperacion = {
+          id: permisoGuardado.id,
+          nombreNegocio: permisoGuardado.nombre_empresa,
+          propietario: permisoGuardado.nombre_propietario,
+          aldea: permisoGuardado.aldea_id || '',
+          barrioColonia: permisoGuardado.barrio_colonia_id || '',
+          direccion: permisoGuardado.direccion || '',
+          rtnEmpresa: permisoGuardado.rtn_empresa || '',
+          identidad: permisoGuardado.numero_identidad,
+          actividadesEconomicas,
+          numeroRecibo: permisoGuardado.numero_recibo || '',
+          valorRecibo: permisoGuardado.valor_recibo?.toString() || '',
+          fechaCreacion: permisoGuardado.fecha_emision || fechaEmision,
+          estado: permisoGuardado.estado as 'Pendiente' | 'Aprobado' | 'Rechazado'
+        }
+        setPermisos([...permisos, nuevoPermiso])
+      }
+
+      limpiarFormulario()
+      setIsEditing(false)
+      setSelectedPermiso(null)
+      setErrores({})
+      
+      alert('Permiso guardado exitosamente')
+    } catch (error: any) {
+      console.error('Error al guardar permiso:', error)
+      alert(`Error al guardar permiso: ${error.message || 'Error desconocido'}`)
+    }
   }
 
   const handleCancelar = (e?: MouseEvent<HTMLButtonElement>) => {
@@ -278,11 +367,50 @@ export default function PermisosOperacion() {
     setErrores({})
   }
 
-  const handleEliminar = (id: string) => {
+  const handleEliminar = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar este permiso?')) {
-      setPermisos(permisos.filter(p => p.id !== id))
+      try {
+        await permisosService.deletePermisoOperacion(id)
+        setPermisos(permisos.filter(p => p.id !== id))
+        alert('Permiso eliminado exitosamente')
+      } catch (error: any) {
+        console.error('Error al eliminar permiso:', error)
+        alert(`Error al eliminar permiso: ${error.message || 'Error desconocido'}`)
+      }
     }
   }
+
+  // Cargar permisos desde Supabase al montar el componente
+  useEffect(() => {
+    const cargarPermisos = async () => {
+      try {
+        const datos = await permisosService.getPermisosOperacion()
+        if (datos && datos.length > 0) {
+          // Mapear datos de Supabase al formato local
+          const permisosMapeados: PermisoOperacion[] = datos.map((p: any) => ({
+            id: p.id,
+            nombreNegocio: p.nombre_empresa || '',
+            propietario: p.nombre_propietario || '',
+            aldea: p.aldea_id || '',
+            barrioColonia: p.barrio_colonia_id || '',
+            direccion: p.direccion || '',
+            rtnEmpresa: p.rtn_empresa || '',
+            identidad: p.numero_identidad || '',
+            actividadesEconomicas: [], // TODO: Cargar desde tabla de relación
+            numeroRecibo: p.numero_recibo || '',
+            valorRecibo: p.valor_recibo?.toString() || '',
+            fechaCreacion: p.fecha_emision || new Date().toLocaleDateString('es-ES'),
+            estado: p.estado || 'Pendiente'
+          }))
+          setPermisos(permisosMapeados)
+        }
+      } catch (error) {
+        console.error('Error al cargar permisos:', error)
+        // Mantener datos de ejemplo si falla la carga
+      }
+    }
+    cargarPermisos()
+  }, [])
 
   const [permisoAImprimir, setPermisoAImprimir] = useState<PermisoOperacion | null>(null)
   const [mostrarModalImpresion, setMostrarModalImpresion] = useState(false)
@@ -383,9 +511,10 @@ export default function PermisosOperacion() {
 
   const formatRTN = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
-    if (cleaned.length <= 3) return cleaned
-    if (cleaned.length <= 9) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 9)}-${cleaned.slice(9, 13)}`
+    if (cleaned.length <= 4) return cleaned
+    if (cleaned.length <= 8) return `${cleaned.slice(0, 4)}-${cleaned.slice(4)}`
+    if (cleaned.length <= 13) return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}-${cleaned.slice(8)}`
+    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}-${cleaned.slice(8, 13)}-${cleaned.slice(13, 14)}`
   }
 
   const formatIdentidad = (value: string) => {
@@ -627,35 +756,42 @@ export default function PermisosOperacion() {
 
             <div>
               <label className="block text-sm text-gray-700 mb-xs">Barrio / Colonia *</label>
-              <Select
-                options={[
-                  { value: '', label: 'Seleccionar barrio/colonia' },
-                  ...barriosFiltrados.map(b => ({ value: b.value, label: b.label }))
-                ]}
-                value={barrioColonia}
-                onChange={(e) => {
-                  setBarrioColonia(e.target.value)
-                  if (errores.barrioColonia) {
-                    const nuevosErrores = { ...errores }
-                    delete nuevosErrores.barrioColonia
-                    setErrores(nuevosErrores)
-                  }
-                }}
-                disabled={!aldea}
-              />
-              {errores.barrioColonia && (
-                <p className="text-xs text-danger mt-xs">{errores.barrioColonia}</p>
-              )}
-              {barrioColonia && (
-                <div className="mt-xs">
-                  <Tag
-                    onRemove={() => {
-                      setBarrioColonia('')
-                    }}
-                  >
-                    {barrios.find(b => b.value === barrioColonia)?.label}
-                  </Tag>
+              {!aldea ? (
+                <div className="w-full px-md py-sm border border-neutral-border rounded-sm bg-gray-100 text-gray-500">
+                  Seleccione una aldea primero
                 </div>
+              ) : (
+                <>
+                  <Select
+                    options={[
+                      { value: '', label: 'Seleccionar barrio/colonia' },
+                      ...barriosFiltrados.map(b => ({ value: b.value, label: b.label }))
+                    ]}
+                    value={barrioColonia}
+                    onChange={(e) => {
+                      setBarrioColonia(e.target.value)
+                      if (errores.barrioColonia) {
+                        const nuevosErrores = { ...errores }
+                        delete nuevosErrores.barrioColonia
+                        setErrores(nuevosErrores)
+                      }
+                    }}
+                  />
+                  {errores.barrioColonia && (
+                    <p className="text-xs text-danger mt-xs">{errores.barrioColonia}</p>
+                  )}
+                  {barrioColonia && (
+                    <div className="mt-xs">
+                      <Tag
+                        onRemove={() => {
+                          setBarrioColonia('')
+                        }}
+                      >
+                        {barrios.find(b => b.value === barrioColonia)?.label}
+                      </Tag>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -676,10 +812,10 @@ export default function PermisosOperacion() {
               />
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <Input
                 label="RTN de la empresa"
-                placeholder="___-______-____"
+                placeholder="____-____-_____-_"
                 value={rtnEmpresa}
                 onChange={(e) => {
                   setRtnEmpresa(formatRTN(e.target.value))
@@ -689,7 +825,7 @@ export default function PermisosOperacion() {
                     setErrores(nuevosErrores)
                   }
                 }}
-                maxLength={15}
+                maxLength={17}
                 error={errores.rtnEmpresa}
               />
             </div>
@@ -725,7 +861,20 @@ export default function PermisosOperacion() {
                       .map(a => ({ value: a, label: a }))
                   ]}
                   value={nuevaActividad}
-                  onChange={(e) => setNuevaActividad(e.target.value)}
+                  onChange={(e) => {
+                    const actividadSeleccionada = e.target.value
+                    setNuevaActividad(actividadSeleccionada)
+                    // Agregar automáticamente cuando se selecciona una actividad
+                    if (actividadSeleccionada && actividadSeleccionada !== '' && !actividadesEconomicas.includes(actividadSeleccionada)) {
+                      setActividadesEconomicas([...actividadesEconomicas, actividadSeleccionada])
+                      setNuevaActividad('') // Limpiar el selector
+                      if (errores.actividadesEconomicas) {
+                        const nuevosErrores = { ...errores }
+                        delete nuevosErrores.actividadesEconomicas
+                        setErrores(nuevosErrores)
+                      }
+                    }
+                  }}
                   className="flex-1"
                 />
                 <Button

@@ -42,6 +42,7 @@ export const useConfiguracionStore = create<ConfiguracionState>()(
         set({ isLoading: true, error: null })
         try {
           await guardarConfiguracion(configuracion)
+          // Actualizar el estado local sin recargar desde Supabase
           set({ configuracion, isLoading: false })
         } catch (error) {
           set({ 
@@ -124,6 +125,7 @@ export const useConfiguracionStore = create<ConfiguracionState>()(
     }
   )
 )
+
 
 
 

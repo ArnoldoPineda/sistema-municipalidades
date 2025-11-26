@@ -92,3 +92,4 @@ Si en la consola del navegador todavía ves `iwllwxtonylugghtcmaw` (con "iwll"),
 
 El archivo `env.d.ts` es solo para declarar tipos en TypeScript. **NO es donde se configuran las variables de entorno**. Las variables se configuran en el archivo `.env` en la raíz del proyecto.
 
+

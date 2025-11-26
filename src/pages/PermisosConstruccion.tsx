@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { MouseEvent } from 'react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -9,6 +9,7 @@ import Card from '@/components/ui/Card'
 import Modal from '@/components/ui/Modal'
 import PermisoConstruccionPrint from '@/components/PermisoConstruccionPrint'
 import SancionesDisposicionesConstruccionPrint from '@/components/SancionesDisposicionesConstruccionPrint'
+import { permisosService } from '@/services/permisosService'
 import { Plus, Save, X, List, Printer, Edit, Trash2, ArrowRight } from 'lucide-react'
 
 interface PermisoConstruccion {
@@ -111,42 +112,114 @@ export default function PermisosConstruccion() {
     setErrores({})
   }
 
-  const handleGuardar = (e?: MouseEvent<HTMLButtonElement>) => {
+  const handleGuardar = async (e?: MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault()
     e?.stopPropagation()
     if (!validarFormulario()) {
       return
     }
 
-    const nuevoPermiso: PermisoConstruccion = {
-      id: isEditing && selectedPermiso ? selectedPermiso.id : Date.now().toString(),
-      concedePermisoA: concedePermisoA.trim(),
-      numeroIdentidad: numeroIdentidad.trim(),
-      claveCatastral: claveCatastral.trim(),
-      paraConstruir: paraConstruir.trim(),
-      ubicacion: ubicacion.trim(),
-      presupuesto: presupuesto.trim(),
-      nombreConstructor: nombreConstructor.trim(),
-      numeroRecibo: numeroRecibo.trim(),
-      valorRecibo: valorRecibo.trim(),
-      fechaCreacion: isEditing && selectedPermiso 
-        ? selectedPermiso.fechaCreacion 
-        : new Date().toLocaleDateString('es-ES'),
-      estado: isEditing && selectedPermiso 
-        ? selectedPermiso.estado 
-        : 'Pendiente'
-    }
+    try {
+      // Validar que los campos requeridos no estén vacíos
+      if (!concedePermisoA || !concedePermisoA.trim()) {
+        alert('El campo "Concede permiso a" es requerido')
+        return
+      }
+      if (!numeroIdentidad || !numeroIdentidad.trim()) {
+        alert('El número de identidad es requerido')
+        return
+      }
+      if (!paraConstruir || !paraConstruir.trim()) {
+        alert('El campo "Para construir" es requerido')
+        return
+      }
 
-    if (isEditing && selectedPermiso) {
-      setPermisos(permisos.map(p => p.id === selectedPermiso.id ? nuevoPermiso : p))
-    } else {
-      setPermisos([...permisos, nuevoPermiso])
-    }
+      // Convertir fecha al formato ISO para Supabase
+      let fechaEmision: string | undefined
+      if (isEditing && selectedPermiso) {
+        // Si estamos editando, convertir la fecha del formato local al ISO
+        if (selectedPermiso.fechaCreacion.includes('/')) {
+          // Formato DD/MM/YYYY a YYYY-MM-DD
+          const [dia, mes, año] = selectedPermiso.fechaCreacion.split('/')
+          fechaEmision = `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`
+        } else {
+          fechaEmision = selectedPermiso.fechaCreacion
+        }
+      } else {
+        fechaEmision = new Date().toISOString().split('T')[0]
+      }
 
-    limpiarFormulario()
-    setIsEditing(false)
-    setSelectedPermiso(null)
-    setErrores({})
+      // Preparar datos para Supabase
+      const permisoData: any = {
+        concede_permiso_a: concedePermisoA.trim(),
+        numero_identidad: numeroIdentidad.trim(), // Asegurar que no sea null
+        clave_catastral: claveCatastral.trim() || null,
+        para_construir: paraConstruir.trim(),
+        ubicacion: ubicacion.trim() || null,
+        presupuesto: presupuesto.trim() ? parseFloat(presupuesto.trim()) : null,
+        nombre_constructor: nombreConstructor.trim() || null,
+        numero_recibo: numeroRecibo.trim() || null,
+        valor_recibo: valorRecibo.trim() ? parseFloat(valorRecibo.trim()) : null,
+        fecha_emision: fechaEmision,
+        estado: isEditing && selectedPermiso 
+          ? selectedPermiso.estado 
+          : 'Pendiente'
+      }
+
+      let permisoGuardado
+
+      if (isEditing && selectedPermiso) {
+        // Actualizar permiso existente
+        permisoGuardado = await permisosService.updatePermisoConstruccion(selectedPermiso.id, permisoData)
+        
+        // Actualizar estado local
+        const permisoActualizado: PermisoConstruccion = {
+          id: permisoGuardado.id,
+          concedePermisoA: permisoGuardado.concede_permiso_a,
+          numeroIdentidad: permisoGuardado.numero_identidad,
+          claveCatastral: permisoGuardado.clave_catastral || '',
+          paraConstruir: permisoGuardado.para_construir,
+          ubicacion: permisoGuardado.ubicacion || '',
+          presupuesto: permisoGuardado.presupuesto?.toString() || '',
+          nombreConstructor: permisoGuardado.nombre_constructor || '',
+          numeroRecibo: permisoGuardado.numero_recibo || '',
+          valorRecibo: permisoGuardado.valor_recibo?.toString() || '',
+          fechaCreacion: permisoGuardado.fecha_emision || fechaEmision,
+          estado: permisoGuardado.estado as 'Pendiente' | 'Aprobado' | 'Rechazado'
+        }
+        setPermisos(permisos.map(p => p.id === selectedPermiso.id ? permisoActualizado : p))
+      } else {
+        // Crear nuevo permiso
+        permisoGuardado = await permisosService.createPermisoConstruccion(permisoData)
+        
+        // Actualizar estado local
+        const nuevoPermiso: PermisoConstruccion = {
+          id: permisoGuardado.id,
+          concedePermisoA: permisoGuardado.concede_permiso_a,
+          numeroIdentidad: permisoGuardado.numero_identidad,
+          claveCatastral: permisoGuardado.clave_catastral || '',
+          paraConstruir: permisoGuardado.para_construir,
+          ubicacion: permisoGuardado.ubicacion || '',
+          presupuesto: permisoGuardado.presupuesto?.toString() || '',
+          nombreConstructor: permisoGuardado.nombre_constructor || '',
+          numeroRecibo: permisoGuardado.numero_recibo || '',
+          valorRecibo: permisoGuardado.valor_recibo?.toString() || '',
+          fechaCreacion: permisoGuardado.fecha_emision || fechaEmision,
+          estado: permisoGuardado.estado as 'Pendiente' | 'Aprobado' | 'Rechazado'
+        }
+        setPermisos([...permisos, nuevoPermiso])
+      }
+
+      limpiarFormulario()
+      setIsEditing(false)
+      setSelectedPermiso(null)
+      setErrores({})
+      
+      alert('Permiso guardado exitosamente')
+    } catch (error: any) {
+      console.error('Error al guardar permiso:', error)
+      alert(`Error al guardar permiso: ${error.message || 'Error desconocido'}`)
+    }
   }
 
   const handleCancelar = (e?: MouseEvent<HTMLButtonElement>) => {
@@ -186,11 +259,49 @@ export default function PermisosConstruccion() {
     setErrores({})
   }
 
-  const handleEliminar = (id: string) => {
+  const handleEliminar = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar este permiso?')) {
-      setPermisos(permisos.filter(p => p.id !== id))
+      try {
+        await permisosService.deletePermisoConstruccion(id)
+        setPermisos(permisos.filter(p => p.id !== id))
+        alert('Permiso eliminado exitosamente')
+      } catch (error: any) {
+        console.error('Error al eliminar permiso:', error)
+        alert(`Error al eliminar permiso: ${error.message || 'Error desconocido'}`)
+      }
     }
   }
+
+  // Cargar permisos desde Supabase al montar el componente
+  useEffect(() => {
+    const cargarPermisos = async () => {
+      try {
+        const datos = await permisosService.getPermisosConstruccion()
+        if (datos && datos.length > 0) {
+          // Mapear datos de Supabase al formato local
+          const permisosMapeados: PermisoConstruccion[] = datos.map((p: any) => ({
+            id: p.id,
+            concedePermisoA: p.concede_permiso_a || '',
+            numeroIdentidad: p.numero_identidad || '',
+            claveCatastral: p.clave_catastral || '',
+            paraConstruir: p.para_construir || '',
+            ubicacion: p.ubicacion || '',
+            presupuesto: p.presupuesto?.toString() || '',
+            nombreConstructor: p.nombre_constructor || '',
+            numeroRecibo: p.numero_recibo || '',
+            valorRecibo: p.valor_recibo?.toString() || '',
+            fechaCreacion: p.fecha_emision || new Date().toLocaleDateString('es-ES'),
+            estado: p.estado || 'Pendiente'
+          }))
+          setPermisos(permisosMapeados)
+        }
+      } catch (error) {
+        console.error('Error al cargar permisos:', error)
+        // Mantener datos de ejemplo si falla la carga
+      }
+    }
+    cargarPermisos()
+  }, [])
 
   const handleImprimir = (permiso?: PermisoConstruccion) => {
     const permisoParaImprimir = permiso || (isEditing && selectedPermiso ? selectedPermiso : null)

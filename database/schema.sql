@@ -247,3 +247,4 @@ ON CONFLICT (id) DO NOTHING;
 -- 4. La tabla perfiles_usuarios se relaciona con auth.users de Supabase
 -- 5. Asegúrate de crear un trigger para sincronizar perfiles_usuarios cuando se crea un usuario en auth.users
 
+

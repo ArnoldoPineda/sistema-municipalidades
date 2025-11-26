@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { MouseEvent } from 'react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -10,6 +10,7 @@ import Tag from '@/components/ui/Tag'
 import Modal from '@/components/ui/Modal'
 import ConstanciaPagoSolvenciaPrint from '@/components/ConstanciaPagoSolvenciaPrint'
 import SolvenciaQRPrint from '@/components/SolvenciaQRPrint'
+import { solvenciasService } from '@/services/solvenciasService'
 import { Plus, Save, X, List, Printer, Edit, Trash2 } from 'lucide-react'
 
 interface SolvenciaPersonal {
@@ -136,38 +137,110 @@ export default function Solvencias() {
     setErrores({})
   }
 
-  const handleGuardar = (e?: MouseEvent<HTMLButtonElement>) => {
+  const handleGuardar = async (e?: MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault()
     e?.stopPropagation()
     if (!validarFormulario()) {
       return
     }
 
-    const nuevaSolvencia: SolvenciaPersonal = {
-      id: isEditing && selectedSolvencia ? selectedSolvencia.id : Date.now().toString(),
-      numeroSolvencia: numeroSolvencia || generarNumeroSolvencia(),
-      nombreContribuyente: nombreContribuyente.trim(),
-      numeroIdentidad: numeroIdentidad.trim(),
-      aldea,
-      barrioColonia,
-      numeroRecibo: numeroRecibo.trim(),
-      valorRecibo: valorRecibo.trim(),
-      fechaCreacion: isEditing && selectedSolvencia 
-        ? selectedSolvencia.fechaCreacion 
-        : new Date().toLocaleDateString('es-ES'),
-      estado: 'Vigente'
-    }
+    try {
+      // Validar que los campos requeridos no estén vacíos
+      if (!nombreContribuyente || !nombreContribuyente.trim()) {
+        alert('El nombre del contribuyente es requerido')
+        return
+      }
+      if (!numeroIdentidad || !numeroIdentidad.trim()) {
+        alert('El número de identidad es requerido')
+        return
+      }
 
-    if (isEditing && selectedSolvencia) {
-      setSolvencias(solvencias.map(s => s.id === selectedSolvencia.id ? nuevaSolvencia : s))
-    } else {
-      setSolvencias([...solvencias, nuevaSolvencia])
-    }
+      // Convertir fecha al formato ISO para Supabase (YYYY-MM-DD)
+      let fechaEmision: string
+      if (isEditing && selectedSolvencia) {
+        // Si estamos editando, convertir la fecha del formato local al ISO
+        if (selectedSolvencia.fechaCreacion.includes('/')) {
+          // Formato DD/MM/YYYY a YYYY-MM-DD
+          const [dia, mes, año] = selectedSolvencia.fechaCreacion.split('/')
+          fechaEmision = `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`
+        } else {
+          fechaEmision = selectedSolvencia.fechaCreacion
+        }
+      } else {
+        // Nueva solvencia: usar fecha actual
+        fechaEmision = new Date().toISOString().split('T')[0]
+      }
 
-    limpiarFormulario()
-    setIsEditing(false)
-    setSelectedSolvencia(null)
-    setErrores({})
+      const numeroSolvenciaFinal = numeroSolvencia || generarNumeroSolvencia()
+
+      // Preparar datos para Supabase
+      const solvenciaData: any = {
+        numero_solvencia: numeroSolvenciaFinal,
+        nombre_contribuyente: nombreContribuyente.trim(),
+        numero_identidad: numeroIdentidad.trim(),
+        aldea_id: aldea || null,
+        barrio_colonia_id: barrioColonia || null,
+        numero_recibo: numeroRecibo.trim() || null,
+        valor_recibo: valorRecibo.trim() ? parseFloat(valorRecibo.trim()) : null,
+        fecha_emision: fechaEmision, // ✅ Ahora esto funcionará
+        tipo: 'personal', // Solvencia de impuestos personales municipales
+        estado: 'Vigente'
+      }
+
+      let solvenciaGuardada
+
+      if (isEditing && selectedSolvencia) {
+        // Actualizar solvencia existente
+        solvenciaGuardada = await solvenciasService.updateSolvencia(selectedSolvencia.id, solvenciaData)
+        
+        // Actualizar estado local
+        const solvenciaActualizada: SolvenciaPersonal = {
+          id: solvenciaGuardada.id,
+          numeroSolvencia: solvenciaGuardada.numero_solvencia,
+          nombreContribuyente: solvenciaGuardada.nombre_contribuyente,
+          numeroIdentidad: solvenciaGuardada.numero_identidad,
+          aldea: solvenciaGuardada.aldea_id || '',
+          barrioColonia: solvenciaGuardada.barrio_colonia_id || '',
+          numeroRecibo: solvenciaGuardada.numero_recibo || '',
+          valorRecibo: solvenciaGuardada.valor_recibo?.toString() || '',
+          fechaCreacion: solvenciaGuardada.fecha_emision 
+            ? new Date(solvenciaGuardada.fecha_emision).toLocaleDateString('es-ES')
+            : new Date().toLocaleDateString('es-ES'),
+          estado: solvenciaGuardada.estado as 'Vigente' | 'Vencida'
+        }
+        setSolvencias(solvencias.map(s => s.id === selectedSolvencia.id ? solvenciaActualizada : s))
+      } else {
+        // Crear nueva solvencia
+        solvenciaGuardada = await solvenciasService.createSolvencia(solvenciaData)
+        
+        // Actualizar estado local
+        const nuevaSolvencia: SolvenciaPersonal = {
+          id: solvenciaGuardada.id,
+          numeroSolvencia: solvenciaGuardada.numero_solvencia,
+          nombreContribuyente: solvenciaGuardada.nombre_contribuyente,
+          numeroIdentidad: solvenciaGuardada.numero_identidad,
+          aldea: solvenciaGuardada.aldea_id || '',
+          barrioColonia: solvenciaGuardada.barrio_colonia_id || '',
+          numeroRecibo: solvenciaGuardada.numero_recibo || '',
+          valorRecibo: solvenciaGuardada.valor_recibo?.toString() || '',
+          fechaCreacion: solvenciaGuardada.fecha_emision
+            ? new Date(solvenciaGuardada.fecha_emision).toLocaleDateString('es-ES')
+            : new Date().toLocaleDateString('es-ES'),
+          estado: solvenciaGuardada.estado as 'Vigente' | 'Vencida'
+        }
+        setSolvencias([...solvencias, nuevaSolvencia])
+      }
+
+      limpiarFormulario()
+      setIsEditing(false)
+      setSelectedSolvencia(null)
+      setErrores({})
+      
+      alert('Solvencia guardada exitosamente')
+    } catch (error: any) {
+      console.error('Error al guardar solvencia:', error)
+      alert(`Error al guardar solvencia: ${error.message || 'Error desconocido'}`)
+    }
   }
 
   const handleCancelar = (e?: MouseEvent<HTMLButtonElement>) => {
@@ -203,11 +276,49 @@ export default function Solvencias() {
     setErrores({})
   }
 
-  const handleEliminar = (id: string) => {
+  const handleEliminar = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar esta solvencia?')) {
-      setSolvencias(solvencias.filter(s => s.id !== id))
+      try {
+        await solvenciasService.deleteSolvencia(id)
+        setSolvencias(solvencias.filter(s => s.id !== id))
+        alert('Solvencia eliminada exitosamente')
+      } catch (error: any) {
+        console.error('Error al eliminar solvencia:', error)
+        alert(`Error al eliminar solvencia: ${error.message || 'Error desconocido'}`)
+      }
     }
   }
+
+  // Cargar solvencias desde Supabase al montar el componente
+  useEffect(() => {
+    const cargarSolvencias = async () => {
+      try {
+        const datos = await solvenciasService.getSolvencias()
+        if (datos && datos.length > 0) {
+          // Mapear datos de Supabase al formato local
+          const solvenciasMapeadas: SolvenciaPersonal[] = datos.map((s: any) => ({
+            id: s.id,
+            numeroSolvencia: s.numero_solvencia || '',
+            nombreContribuyente: s.nombre_contribuyente || '',
+            numeroIdentidad: s.numero_identidad || '',
+            aldea: s.aldea_id || '',
+            barrioColonia: s.barrio_colonia_id || '',
+            numeroRecibo: s.numero_recibo || '',
+            valorRecibo: s.valor_recibo?.toString() || '',
+            fechaCreacion: s.fecha_emision 
+              ? new Date(s.fecha_emision).toLocaleDateString('es-ES')
+              : new Date().toLocaleDateString('es-ES'),
+            estado: s.estado || 'Vigente'
+          }))
+          setSolvencias(solvenciasMapeadas)
+        }
+      } catch (error) {
+        console.error('Error al cargar solvencias:', error)
+        // Mantener datos de ejemplo si falla la carga
+      }
+    }
+    cargarSolvencias()
+  }, [])
 
   const handleImprimir = (solvencia?: SolvenciaPersonal) => {
     const solvenciaParaImprimir = solvencia || (isEditing && selectedSolvencia ? selectedSolvencia : null)
@@ -355,7 +466,7 @@ export default function Solvencias() {
               placeholder="0000034"
               value={numeroSolvencia}
               onChange={(e) => setNumeroSolvencia(e.target.value)}
-              disabled={!isEditing}
+              readOnly
             />
 
             <Input

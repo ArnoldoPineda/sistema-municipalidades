@@ -43,3 +43,4 @@ ON CONFLICT (id) DO NOTHING;
 -- Verificar que se creó correctamente
 SELECT 'Tabla configuracion_municipal creada exitosamente' as resultado;
 
+

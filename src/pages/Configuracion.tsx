@@ -22,11 +22,18 @@ export default function Configuracion() {
 
   useEffect(() => {
     cargar()
-  }, [cargar])
+  }, []) // Solo cargar una vez al montar
 
   useEffect(() => {
     if (configuracion) {
-      setLocalConfig(configuracion)
+      // Sincronizar localConfig con configuracion del store solo si cambia desde fuera
+      setLocalConfig(prevConfig => {
+        // Solo actualizar si es diferente y no estamos en medio de una edición
+        if (!prevConfig || JSON.stringify(prevConfig) !== JSON.stringify(configuracion)) {
+          return configuracion
+        }
+        return prevConfig
+      })
     }
   }, [configuracion])
 
@@ -39,29 +46,33 @@ export default function Configuracion() {
     if (!localConfig) return
 
     try {
+      setMensaje({ tipo: 'success', texto: 'Guardando configuración...' })
+      // Guardar en Supabase y actualizar el store
       await guardar(localConfig)
-      mostrarMensaje('success', 'Configuración guardada exitosamente')
+      // El store ya se actualiza en el método guardar, no necesitamos recargar
+      mostrarMensaje('success', 'Configuración guardada exitosamente. Los cambios se reflejarán en los documentos.')
     } catch (error) {
-      mostrarMensaje('error', 'Error al guardar la configuración')
+      console.error('Error al guardar:', error)
+      mostrarMensaje('error', `Error al guardar la configuración: ${error instanceof Error ? error.message : 'Error desconocido'}`)
     }
   }
 
-  const handleActualizarFirmas = async (firmas: Partial<ConfiguracionCompleta['firmas']>) => {
+  const handleActualizarFirmas = (firmas: Partial<ConfiguracionCompleta['firmas']>) => {
     if (!localConfig) return
 
     const nuevasFirmas = { ...localConfig.firmas, ...firmas }
     setLocalConfig({ ...localConfig, firmas: nuevasFirmas })
-    await actualizarFirmas(firmas)
-    mostrarMensaje('success', 'Firmas actualizadas')
+    // No guardar automáticamente, solo actualizar estado local
+    // Se guardará cuando se presione "Guardar Todo"
   }
 
-  const handleActualizarLogos = async (logos: Partial<ConfiguracionCompleta['logos']>) => {
+  const handleActualizarLogos = (logos: Partial<ConfiguracionCompleta['logos']>) => {
     if (!localConfig) return
 
     const nuevosLogos = { ...localConfig.logos, ...logos }
     setLocalConfig({ ...localConfig, logos: nuevosLogos })
-    await actualizarLogos(logos)
-    mostrarMensaje('success', 'Logos actualizados')
+    // No guardar automáticamente, solo actualizar estado local
+    // Se guardará cuando se presione "Guardar Todo"
   }
 
   const handleActualizarNumeracion = (tipo: 'permisosOperacion' | 'permisosConstruccion' | 'solvencias', campo: string, valor: string) => {

@@ -31,3 +31,4 @@ ORDER BY tabla;
 -- Verificar que la configuración inicial existe
 SELECT * FROM configuracion_municipal WHERE id = 1;
 
+

@@ -106,3 +106,4 @@ Si el panel de Supabase sigue dando error:
 
 Pero recuerda: **la URL correcta ya está en el archivo .env**, solo necesitas la clave (anon key).
 
+

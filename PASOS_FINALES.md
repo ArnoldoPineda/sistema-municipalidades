@@ -100,3 +100,4 @@ Si en la consola todavía ves `lwllwxtonylugghtcmaw` (con "lugghtcmaw"):
 5. ⏳ Limpiar caché del navegador
 6. ⏳ Probar la conexión
 
+
